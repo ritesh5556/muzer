@@ -2,6 +2,8 @@ import GoogleProvider from "next-auth/providers/google";
 import NextAuth, {type DefaultSession } from "next-auth"
 import { prismaClient } from "@/app/lib/db";
 
+console.log("secrete -> ", process.env.NEXTAUTH_SECRET)
+
 declare module "next-auth" {
     interface Session {
         user: {

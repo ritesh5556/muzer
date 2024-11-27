@@ -83,10 +83,10 @@ export async function GET(req: NextRequest) {
             email: session?.user?.email ?? ""
         }
     });
-
+    console.log("creatorId ", creatorId)
     if (!user) {
         return NextResponse.json({
-            message: "Unauthenticated"
+            message: "Unauthenticated User"
         }, {
             status: 403
         })

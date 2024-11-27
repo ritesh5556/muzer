@@ -49,7 +49,7 @@ export default function StreamView({
         credentials: "include"
     });
     const json = await res.json();
-    setQueue(json.streams.sort((a: any, b: any) => a.upvotes < b.upvotes ? 1 : -1));
+    json.streams && setQueue(json.streams.sort((a: any, b: any) => a.upvotes < b.upvotes ? 1 : -1));
     
     setCurrentVideo(video => {
         if (video?.id === json.activeStream?.stream?.id) {

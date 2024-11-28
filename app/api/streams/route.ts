@@ -38,15 +38,13 @@ export async function POST(req: NextRequest) {
         const extractedId = data.url.split("?v=")[1];
 
         // Fetch video details from YouTube API
+        console.log("Token : ", extractedId);
         const res = await youtubesearchapi.GetVideoDetails(extractedId);
-
-        // Check if the response and thumbnails exist
-        if (!res || !res.thumbnail || !res.thumbnail.thumbnails) {
-            return NextResponse.json(
-                { message: "Unable to fetch video details or thumbnails" },
-                { status: 400 }
-            );
+        if (!res || !res.thumbnail) {
+            console.error("Failed to fetch video details:", res);
+            return NextResponse.json({ message: "Unable to fetch video details or thumbnails" }, { status: 400 });
         }
+
 
         // Sort thumbnails by width
         const thumbnails = res.thumbnail.thumbnails;

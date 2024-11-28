@@ -15,27 +15,23 @@ const MAX_QUEUE_LEN = 20;
 
 export async function POST(req: NextRequest) {
     try {
-        // Log incoming headers for debugging
         console.log("Headers:", req.headers);
 
-        // Check if the body exists and parse it
         const body = await req.json();
         if (!body) {
             return NextResponse.json(
                 { message: "Request body is missing" },
-                { status: 400 } // Return Bad Request if body is missing
+                { status: 400 }
             );
         }
 
-        // Validate the payload using Zod schema
         const data = CreateStreamSchema.parse(body);
 
-        // Validate the YouTube URL
         const isYt = data.url.match(YT_REGEX);
         if (!isYt) {
             return NextResponse.json(
                 { message: "Wrong URL format" },
-                { status: 400 } // Return Bad Request for invalid URL
+                { status: 400 }
             );
         }
 
@@ -44,13 +40,21 @@ export async function POST(req: NextRequest) {
         // Fetch video details from YouTube API
         const res = await youtubesearchapi.GetVideoDetails(extractedId);
 
-        // Sort thumbnails
+        // Check if the response and thumbnails exist
+        if (!res || !res.thumbnail || !res.thumbnail.thumbnails) {
+            return NextResponse.json(
+                { message: "Unable to fetch video details or thumbnails" },
+                { status: 400 }
+            );
+        }
+
+        // Sort thumbnails by width
         const thumbnails = res.thumbnail.thumbnails;
         thumbnails.sort((a: { width: number }, b: { width: number }) =>
             a.width < b.width ? -1 : 1
         );
 
-        // Check active streams
+        // Check if the creator has reached the max queue length
         const existingActiveStream = await prismaClient.stream.count({
             where: {
                 userId: data.creatorId
@@ -60,11 +64,11 @@ export async function POST(req: NextRequest) {
         if (existingActiveStream > MAX_QUEUE_LEN) {
             return NextResponse.json(
                 { message: "Already at limit" },
-                { status: 400 } // Use a more specific status code
+                { status: 400 }
             );
         }
 
-        // Create the stream
+        // Create the stream in the database
         const stream = await prismaClient.stream.create({
             data: {
                 userId: data.creatorId,
@@ -74,11 +78,11 @@ export async function POST(req: NextRequest) {
                 title: res.title ?? "Cant find video",
                 smallImg:
                     (thumbnails.length > 1
-                        ? thumbnails[thumbnails.length - 2].url
-                        : thumbnails[thumbnails.length - 1].url) ??
+                        ? thumbnails[thumbnails.length - 2]?.url
+                        : thumbnails[thumbnails.length - 1]?.url) ??
                     "https://cdn.pixabay.com/photo/2024/02/28/07/42/european-shorthair-8601492_640.jpg",
                 bigImg:
-                    thumbnails[thumbnails.length - 1].url ??
+                    thumbnails[thumbnails.length - 1]?.url ??
                     "https://cdn.pixabay.com/photo/2024/02/28/07/42/european-shorthair-8601492_640.jpg"
             }
         });
@@ -89,10 +93,10 @@ export async function POST(req: NextRequest) {
             upvotes: 0
         });
     } catch (e) {
-        console.error("Error in POST:", e); // Log errors for debugging
+        console.error("Error in POST:", e);
         return NextResponse.json(
             { message: "Error while adding a stream" },
-            { status: 500 } // Internal Server Error
+            { status: 500 }
         );
     }
 }
@@ -123,7 +127,6 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        // Fetch streams and active stream
         const [streams, activeStream] = await Promise.all([
             prismaClient.stream.findMany({
                 where: {
@@ -162,7 +165,7 @@ export async function GET(req: NextRequest) {
             activeStream
         });
     } catch (e) {
-        console.error("Error in GET:", e); // Log errors for debugging
+        console.error("Error in GET:", e);
         return NextResponse.json(
             { message: "Error while fetching streams" },
             { status: 500 }

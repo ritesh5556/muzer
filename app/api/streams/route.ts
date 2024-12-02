@@ -45,6 +45,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: "Unable to fetch video details or thumbnails" }, { status: 400 });
         }
 
+        console.log("res : ", res);
+
 
         // Sort thumbnails by width
         const thumbnails = res.thumbnail.thumbnails;

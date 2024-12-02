@@ -15,13 +15,37 @@ export const GET = async (req: NextRequest) => {
         return NextResponse.json({
             message: "Unauthenticated"
         }, {
-            status: 403
-        })
+            status: 403,
+            headers: {
+                "Access-Control-Allow-Origin": "*", // Replace * with your allowed origin
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization",
+            }
+        });
     }
+
     return NextResponse.json({
         user
+    }, {
+        headers: {
+            "Access-Control-Allow-Origin": "*", // Replace * with your allowed origin
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        }
+    });
+};
+
+// Preflight request handler (OPTIONS request)
+export const OPTIONS = () => {
+    return new Response(null, {
+        status: 204,
+        headers: {
+            "Access-Control-Allow-Origin": "*", // Replace * with your allowed origin
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        }
     });
 }
 
-// dont static render
-export const dynamic = 'force-dynamic'
+// don't static render
+export const dynamic = 'force-dynamic';

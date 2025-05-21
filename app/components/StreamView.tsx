@@ -13,6 +13,7 @@ import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css'
 import { YT_REGEX } from '../lib/utils'
 //@ts-ignore
 import YouTubePlayer from 'youtube-player';
+import { SearchBar } from "@/app/components/SearchBar";
 
 interface Video {
     "id": string,
@@ -37,12 +38,12 @@ export default function StreamView({
     creatorId: string;
     playVideo: boolean;
 }) {
-  const [inputLink, setInputLink] = useState('')
   const [queue, setQueue] = useState<Video[]>([])
   const [currentVideo, setCurrentVideo] = useState<Video | null>(null)
   const [loading, setLoading] = useState(false);
   const [playNextLoader, setPlayNextLoader] = useState(false);
   const videoPlayerRef = useRef<HTMLDivElement>();
+  const [selectedUrl, setSelectedUrl] = useState("");
 
   async function refreshStreams() {
     const res = await fetch(`/api/streams/?creatorId=${creatorId}`, {
@@ -90,19 +91,20 @@ export default function StreamView({
     }
   }, [currentVideo, videoPlayerRef])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!selectedUrl) return;
     setLoading(true);
     const res = await fetch("/api/streams/", {
         method: "POST",
         body: JSON.stringify({
             creatorId,
-            url: inputLink
+            url: selectedUrl
         })
     });
     setQueue([...queue, await res.json()])
     setLoading(false);
-    setInputLink('')
+    setSelectedUrl("");
   }
 
   const handleVote = (id: string, isUpvote: boolean) => {
@@ -165,6 +167,9 @@ export default function StreamView({
         progress: undefined,
       })
     })
+
+    
+
   }
 
   return (
@@ -214,20 +219,16 @@ export default function StreamView({
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-2">
-                        <Input
-                            type="text"
-                            placeholder="Paste YouTube link here"
-                            value={inputLink}
-                            onChange={(e) => setInputLink(e.target.value)}
-                            className="bg-gray-900 text-white border-gray-700 placeholder-gray-500"
-                        />
-                        <Button disabled={loading} onClick={handleSubmit} type="submit" className="w-full bg-purple-700 hover:bg-purple-800 text-white">{loading ? "Loading..." : "Add to Queue"}</Button>
+                        <SearchBar onSelect={setSelectedUrl} />
+                        <div className="mt-2">
+                          <Button disabled={loading || !selectedUrl} onClick={handleSubmit} type="submit" className="w-full bg-purple-700 hover:bg-purple-800 text-white shadow-lg transition-all duration-150">{loading ? "Loading..." : "Add to Queue"}</Button>
+                        </div>
                         </form>
 
-                        {inputLink && inputLink.match(YT_REGEX) && !loading && (
+                        {selectedUrl && selectedUrl.match(YT_REGEX) && !loading && (
                         <Card className="bg-gray-900 border-gray-800">
                             <CardContent className="p-4">
-                                <LiteYouTubeEmbed title="" id={inputLink.split("?v=")[1]} />
+                                <LiteYouTubeEmbed title="" id={selectedUrl.split("?v=")[1]} />
                             </CardContent>
                         </Card>
                         )}
